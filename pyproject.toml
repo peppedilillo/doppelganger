@@ -36,4 +36,4 @@ dev = [
 ]
 
 [project.scripts]
-tunein = 'scripts.tunein:main'
+tunein = 'doppelganger.scripts.tunein:main'

@@ -73,6 +73,9 @@ def main(
     secret: str,
     offset: Literal["earliest", "latest"]
 ):
+    if not instruments:
+        console.print("At least one instrument broadcash is required. Usage: tunein --help")
+        return
     if not userid:
         userid = Prompt.ask("Enter NASA-GCN userid")
     if not secret:
