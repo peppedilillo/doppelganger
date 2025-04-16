@@ -1,6 +1,6 @@
 # doppelganger
 
-This is a repo collecting tools we are building for searching LSST data for optical counterparts to high-energy events.
+This is a repo collecting tools for searching LSST data for optical counterparts to high-energy events.
 Work in progress.
 
 ## Installing
