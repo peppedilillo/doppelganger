@@ -64,7 +64,7 @@ def fetch(service, ra: float, dec: float, band: Literal["u", "g", "r", "i", "z",
             continue
         template = butler.get("goodSeeingDiff_templateExp", dataId=_dId)
         sources = butler.get('src', dataId=_dId)
-        return calexp, template, sources, visit["lsst_ccdvisitid"].iloc[0]
+        return calexp, template, sources
     if len(visits_df) == 0:
         raise RuntimeError(f"Could not find an image containing the target, visit table is empty.")
     raise RuntimeError(f"No images containing the transient found in {max_attempts} attempts.")
@@ -116,7 +116,7 @@ def subtract(science, template, sources):
 
 def sfis_pipeline(service, ra, dec, mag, band):
     print("Retrieving visit table, choosing one visit at random.")
-    calexp, template, sources, visit = fetch(service, ra, dec, band)
+    calexp, template, sources = fetch(service, ra, dec, band)
     print("Starting source injection.")
     calexp_injected, calexp_catalog = inject(calexp, ra, dec, mag)
     print("Starting DIA.")
@@ -125,5 +125,4 @@ def sfis_pipeline(service, ra, dec, mag, band):
         "science": calexp_injected,
         "template": template,
         "difference": calexp_difference,
-        "visit": visit,
     }
