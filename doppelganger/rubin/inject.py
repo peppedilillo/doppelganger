@@ -29,7 +29,7 @@ def seek(
     dataproduct_subtype: str | None = None,
     band: Literal["u", "g", "r", "i", "z", "y"] | None = None
 ):
-    query = f"SELECT * FROM ivoa.ObsCore WHERE CONTAINS(POINT('ICRS', {ra:.4f}, {dec:.4f}), s_region) = 1"
+    query = f"SELECT * FROM dp02_dc2_catalogs.ObsCore WHERE CONTAINS(POINT('ICRS', {ra:.4f}, {dec:.4f}), s_region) = 1"
     df = service.search(query).to_table().to_pandas()
     if dataproduct_subtype is not None:
         df = df[df["dataproduct_subtype"] == dataproduct_subtype]
