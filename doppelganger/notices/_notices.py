@@ -20,6 +20,7 @@ def _parse_tree(node: Node) -> dict:
     DFS implementation of `parse_notice`.
     Parses a single ElementTree node into a dictionary.
     """
+
     def visit(n: Node):
         """Helper. Node operations, returns a key-value pair."""
         k, v = n.tag, {}
@@ -67,14 +68,14 @@ def parse_notice_file(path: str | Path) -> dict:
     Attributes are also keys, but they are noted with '@' prefix.
     Text within tags is stored with key '#text'.
     """
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         return parse_notice(f.read())
 
 
 def _get_nested_key(
-        notice: dict,
-        name: str,
-        key: str,
+    notice: dict,
+    name: str,
+    key: str,
 ) -> dict:
     """
     Returns first nested 'key' matching `name` in notice.
@@ -91,10 +92,7 @@ def _get_nested_key(
     return {}
 
 
-def get_param(
-        notice: dict,
-        name: str
-) -> dict:
+def get_param(notice: dict, name: str) -> dict:
     """
     Returns first parameter matching `name` in notice.
     Returns empty dict otherwise.
@@ -104,10 +102,7 @@ def get_param(
     return _get_nested_key(notice, name, "Param")
 
 
-def get_group(
-        notice: dict,
-        name: str
-) -> dict:
+def get_group(notice: dict, name: str) -> dict:
     """
     Returns first group matching `name` in notice.
     Returns empty dict otherwise.

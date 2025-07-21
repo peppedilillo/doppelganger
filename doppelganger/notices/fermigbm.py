@@ -12,6 +12,7 @@ __all__ = [
     "get_localization_error",
 ]
 
+
 def _get_coords(notice: dict) -> dict:
     return notice["WhereWhen"]["ObsDataLocation"]["ObservationLocation"]["AstroCoords"]
 
@@ -21,7 +22,10 @@ _PATTERN_COORDS_SYSTEM_ID = r"(.*?)-(.*?)-(.*?)"
 
 def _parse_coordsys(coords: dict) -> tuple[str, str, str]:
     """Helper returning timezone, frame and geographic reference from a notice."""
-    if match := re.match(_PATTERN_COORDS_SYSTEM_ID, (_cs := coords["@coord_system_id"]), ):
+    if match := re.match(
+        _PATTERN_COORDS_SYSTEM_ID,
+        (_cs := coords["@coord_system_id"]),
+    ):
         tz, frame, geo = match.groups()
     else:
         raise ValueError(f"Unknown coordinate system '{_cs}'.")

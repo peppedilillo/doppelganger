@@ -9,7 +9,10 @@ from lsst.daf.butler import Butler
 from lsst.afw.math import Warper, WarperConfig
 from lsst.source.injection import generate_injection_catalog
 from lsst.source.injection import VisitInjectConfig, VisitInjectTask
-from lsst.ip.diffim.subtractImages import AlardLuptonSubtractTask, AlardLuptonSubtractConfig
+from lsst.ip.diffim.subtractImages import (
+    AlardLuptonSubtractTask,
+    AlardLuptonSubtractConfig,
+)
 
 
 def calexp_contains(calexp, ra: float, dec: float) -> bool:
@@ -36,7 +39,7 @@ def seek(
     dec: float,
     catalog: Literal["dp02", "dp03", "dp1"] = "dp02",
     dataproduct_subtype: str | None = None,
-    band: Literal["u", "g", "r", "i", "z", "y"] | None = None
+    band: Literal["u", "g", "r", "i", "z", "y"] | None = None,
 ) -> pd.DataFrame:
     """
     Queries DP02 `ObsCore` table for images of a certain sky coordinate.
@@ -77,7 +80,7 @@ def fetch(
     dec: float,
     band: Literal["u", "g", "r", "i", "z", "y"],
     catalog: Literal["dp02", "dp03", "dp1"] = "dp02",
-    max_attempts: int=5
+    max_attempts: int = 5,
 ) -> tuple:
     """
     Fetches a random DP02 calexp image of a sky coordinate.
@@ -99,6 +102,7 @@ def fetch(
         NotImplementedError: when catalog is one of `dp03` or `dp1`.
         ValueError: when `catalog` is not one of `dp02`, `dp03`, `dp1`.
     """
+
     def dataId(visit: pd.DataFrame) -> dict:
         """
         Takes a row from the dataframe returned by seek and parses a dataId dictionary for the butler.
@@ -111,8 +115,10 @@ def fetch(
             "physical_filter": f"{band}_sim_1.4",
         }
 
-    butler = Butler('dp02', collections='2.2i/runs/DP0.2')
-    visits_df = seek(service, ra, dec, catalog=catalog, dataproduct_subtype="lsst.calexp", band=band)
+    butler = Butler("dp02", collections="2.2i/runs/DP0.2")
+    visits_df = seek(
+        service, ra, dec, catalog=catalog, dataproduct_subtype="lsst.calexp", band=band
+    )
     attempts = 0
     while attempts < max_attempts and len(visits_df) > 0:
         visit = visits_df.sample(1)
@@ -121,17 +127,27 @@ def fetch(
         if not calexp_contains(calexp, ra, dec):
             attempts += 1
             warn(
-                "Skipping an image since it does not actually contain the candidate source, likely due to s_region padding.")
+                "Skipping an image since it does not actually contain the candidate source, likely due to s_region padding."
+            )
             continue
         template = butler.get("goodSeeingDiff_templateExp", dataId=_dId)
-        sources = butler.get('src', dataId=_dId)
+        sources = butler.get("src", dataId=_dId)
         return calexp, template, sources
     if len(visits_df) == 0:
-        raise ValueError(f"Could not find an image containing the target, visit table is empty.")
-    raise RuntimeError(f"No images containing the transient found in {max_attempts} attempts.")
+        raise ValueError(
+            f"Could not find an image containing the target, visit table is empty."
+        )
+    raise RuntimeError(
+        f"No images containing the transient found in {max_attempts} attempts."
+    )
 
 
-def inject(calexp, ra: float, dec: float, mag: float,):
+def inject(
+    calexp,
+    ra: float,
+    dec: float,
+    mag: float,
+):
     """
     Inject a source onto a calexp image.
 
@@ -144,7 +160,7 @@ def inject(calexp, ra: float, dec: float, mag: float,):
     Returns:
 
     """
-    EPSILON = 10 ** -7
+    EPSILON = 10**-7
     injection_catalog = generate_injection_catalog(
         ra_lim=[ra, ra + EPSILON],
         dec_lim=[dec, dec + EPSILON],
@@ -164,21 +180,30 @@ def inject(calexp, ra: float, dec: float, mag: float,):
     return injected_output.output_exposure, injected_output.output_catalog
 
 
-def warp(science, template,):
+def warp(
+    science,
+    template,
+):
     """
     Warp input template image to WCS and Bounding Box of the science image.
     From: https://github.com/LSSTDESC/dia_improvement/blob/master/notebooks/dia_kernel_exploration.ipynb
     """
     warper_config = WarperConfig()
     warper = Warper.fromConfig(warper_config)
-    warped_template = warper.warpExposure(science.getWcs(), template, destBBox=science.getBBox())
+    warped_template = warper.warpExposure(
+        science.getWcs(), template, destBBox=science.getBBox()
+    )
     # Add PSF.  I think doing this directly without warping is wrong.
     # At least the x,y mapping should be updated
     warped_template.setPsf(template.getPsf())
     return warped_template
 
 
-def subtract(science, template, sources,):
+def subtract(
+    science,
+    template,
+    sources,
+):
     """
     Subtract template from science image.
 
@@ -192,13 +217,22 @@ def subtract(science, template, sources,):
     """
     template_warped = warp(science, template)
     config = AlardLuptonSubtractConfig()
-    config.sourceSelector.value.unresolved.name = 'base_ClassificationExtendedness_value'
+    config.sourceSelector.value.unresolved.name = (
+        "base_ClassificationExtendedness_value"
+    )
     alTask = AlardLuptonSubtractTask(config=config)
     difference = alTask.run(template_warped, science, sources)
     return difference.difference
 
 
-def sfis_pipeline(service, ra, dec, mag, band, catalog: Literal["dp02", "dp03", "dp1"] = "dp02",):
+def sfis_pipeline(
+    service,
+    ra,
+    dec,
+    mag,
+    band,
+    catalog: Literal["dp02", "dp03", "dp1"] = "dp02",
+):
     """
     Seek, fetch, inject with a source and subtract calibrated exposures.
 

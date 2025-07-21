@@ -15,10 +15,10 @@ console = Console()
 
 TOPICS_PRESETS = {
     "fermi-gbm": [
-        'gcn.classic.voevent.FERMI_GBM_ALERT',
-        'gcn.classic.voevent.FERMI_GBM_FIN_POS',
-        'gcn.classic.voevent.FERMI_GBM_FLT_POS',
-        'gcn.classic.voevent.FERMI_GBM_GND_POS',
+        "gcn.classic.voevent.FERMI_GBM_ALERT",
+        "gcn.classic.voevent.FERMI_GBM_FIN_POS",
+        "gcn.classic.voevent.FERMI_GBM_FLT_POS",
+        "gcn.classic.voevent.FERMI_GBM_GND_POS",
     ],
 }
 
@@ -33,7 +33,9 @@ def info_from_notice(content: str):
     )
 
 
-def formatted(issuet: datetime, obst: datetime, loc: CelestialCoords, err: float) -> str:
+def formatted(
+    issuet: datetime, obst: datetime, loc: CelestialCoords, err: float
+) -> str:
     return f"""
     \tIssued: {issuet.strftime("%m/%d/%Y, %H:%M:%S")}
     \tTime:   {obst.strftime("%m/%d/%Y, %H:%M:%S")}
@@ -65,16 +67,18 @@ def formatted(issuet: datetime, obst: datetime, loc: CelestialCoords, err: float
     type=click.Choice(["earliest", "latest"]),
     default="earliest",
     help="Sets the points in time from when the stream will start. "
-    "Setting to `earliest` will stream all past events reachable, before start streaming new ones."
+    "Setting to `earliest` will stream all past events reachable, before start streaming new ones.",
 )
 def main(
     instruments: list[Literal["fermi-gbm"]],
     userid: str,
     secret: str,
-    offset: Literal["earliest", "latest"]
+    offset: Literal["earliest", "latest"],
 ):
     if not instruments:
-        console.print("At least one instrument broadcash is required. Usage: tunein --help")
+        console.print(
+            "At least one instrument broadcash is required. Usage: tunein --help"
+        )
         return
     if not userid:
         userid = Prompt.ask("Enter NASA-GCN userid")
@@ -99,12 +103,14 @@ def main(
             if message.error():
                 console.print(message.error())
                 continue
-            topic = message.topic().split('.')[-1].lower()
+            topic = message.topic().split(".")[-1].lower()
             offset_str = str(message.offset())
             content = message.value().decode()
 
             console.print("------------")
-            console.print(f"Received VOEvent from topic={topic}, at offset={offset_str}.")
+            console.print(
+                f"Received VOEvent from topic={topic}, at offset={offset_str}."
+            )
             console.print(formatted(*info_from_notice(content)), end="\n\n")
 
 
