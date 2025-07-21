@@ -12,7 +12,15 @@ from lsst.source.injection import VisitInjectConfig, VisitInjectTask
 from lsst.ip.diffim.subtractImages import AlardLuptonSubtractTask, AlardLuptonSubtractConfig
 
 
-def calexp_contains(calexp, ra, dec):
+def calexp_contains(calexp, ra: float, dec: float) -> bool:
+    """
+    Checks whether `calexp` contains a `ra` and `dec` coordinates.
+
+    Args:
+        calexp:
+        ra: in degrees
+        dec: in degrees
+    """
     lsst_wcs = calexp.getWcs()
     sky_point = SpherePoint(ra * geom.degrees, dec * geom.degrees)
     pixel_point = Point2I(lsst_wcs.skyToPixel(sky_point))
@@ -28,7 +36,21 @@ def seek(
     dec: float,
     dataproduct_subtype: str | None = None,
     band: Literal["u", "g", "r", "i", "z", "y"] | None = None
-):
+) -> pd.DataFrame:
+    """
+    Queries DP02 `ObsCore` table for images of a certain sky coordinate.
+    Returns a dataframe of the results.
+
+    Args:
+        service:
+        ra: in degrees
+        dec: in degrees
+        dataproduct_subtype: if not specified, all data products are returned
+        band: if not specified, images across all bands are returned
+
+    Returns:
+        a DataFrame with one row per image.
+    """
     query = f"SELECT * FROM dp02_dc2_catalogs.ObsCore WHERE CONTAINS(POINT('ICRS', {ra:.4f}, {dec:.4f}), s_region) = 1"
     df = service.search(query).to_table().to_pandas()
     if dataproduct_subtype is not None:
@@ -38,7 +60,30 @@ def seek(
     return df
 
 
-def fetch(service, ra: float, dec: float, band: Literal["u", "g", "r", "i", "z", "y"], max_attempts: int=5):
+def fetch(
+    service,
+    ra: float,
+    dec: float,
+    band: Literal["u", "g", "r", "i", "z", "y"],
+    max_attempts: int=5
+) -> tuple:
+    """
+    Fetches a random DP02 calexp image of a sky coordinate.
+
+    Args:
+        service:
+        ra: in degrees
+        dec: in degrees
+        band:
+        max_attempts: controls how many time we can skip a calexp if the source falls on the padding region.
+
+    Returns:
+        A tuple of the calexp, its associated template and source table.
+
+    Raises:
+        ValueError: if no image of the coordinate exists.
+        RuntimeError: if `max_attempts` is exceeded.
+    """
     def dataId(visit: pd.DataFrame) -> dict:
         """
         Takes a row from the dataframe returned by seek and parses a dataId dictionary for the butler.
@@ -56,6 +101,7 @@ def fetch(service, ra: float, dec: float, band: Literal["u", "g", "r", "i", "z",
     attempts = 0
     while attempts < max_attempts and len(visits_df) > 0:
         visit = visits_df.sample(1)
+        # TODO: the sample shall be removed from visits_df to avoid resampling
         calexp = butler.get("calexp", dataId=(_dId := dataId(visit)))
         if not calexp_contains(calexp, ra, dec):
             attempts += 1
@@ -66,11 +112,23 @@ def fetch(service, ra: float, dec: float, band: Literal["u", "g", "r", "i", "z",
         sources = butler.get('src', dataId=_dId)
         return calexp, template, sources
     if len(visits_df) == 0:
-        raise RuntimeError(f"Could not find an image containing the target, visit table is empty.")
+        raise ValueError(f"Could not find an image containing the target, visit table is empty.")
     raise RuntimeError(f"No images containing the transient found in {max_attempts} attempts.")
 
 
 def inject(calexp, ra: float, dec: float, mag: float):
+    """
+    Inject a source onto a calexp image.
+
+    Args:
+        calexp:
+        ra: in degrees
+        dec: in degrees
+        mag:
+
+    Returns:
+
+    """
     EPSILON = 10 ** -7
     injection_catalog = generate_injection_catalog(
         ra_lim=[ra, ra + EPSILON],
@@ -106,6 +164,17 @@ def warp(science, template):
 
 
 def subtract(science, template, sources):
+    """
+    Subtract template from science image.
+
+    Args:
+        science:
+        template:
+        sources:
+
+    Returns:
+
+    """
     template_warped = warp(science, template)
     config = AlardLuptonSubtractConfig()
     config.sourceSelector.value.unresolved.name = 'base_ClassificationExtendedness_value'
