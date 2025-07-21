@@ -34,6 +34,7 @@ def seek(
     service,
     ra: float,
     dec: float,
+    catalog: Literal["dp02", "dp03", "dp1"] = "dp02",
     dataproduct_subtype: str | None = None,
     band: Literal["u", "g", "r", "i", "z", "y"] | None = None
 ) -> pd.DataFrame:
@@ -45,13 +46,23 @@ def seek(
         service:
         ra: in degrees
         dec: in degrees
+        catalog:
         dataproduct_subtype: if not specified, all data products are returned
         band: if not specified, images across all bands are returned
 
     Returns:
         a DataFrame with one row per image.
+
+    Raises:
+        NotImplementedError: when catalog is one of `dp03` or `dp1`.
+        ValueError: when `catalog` is not one of `dp02`, `dp03`, `dp1`.
     """
-    query = f"SELECT * FROM dp02_dc2_catalogs.ObsCore WHERE CONTAINS(POINT('ICRS', {ra:.4f}, {dec:.4f}), s_region) = 1"
+    if catalog == "dp02":
+        query = f"SELECT * FROM dp02_dc2_catalogs.ObsCore WHERE CONTAINS(POINT('ICRS', {ra:.4f}, {dec:.4f}), s_region) = 1"
+    elif catalog in ("dp03", "dp1"):
+        raise NotImplementedError()
+    else:
+        raise ValueError("This catalog is not supported.")
     df = service.search(query).to_table().to_pandas()
     if dataproduct_subtype is not None:
         df = df[df["dataproduct_subtype"] == dataproduct_subtype]
@@ -65,6 +76,7 @@ def fetch(
     ra: float,
     dec: float,
     band: Literal["u", "g", "r", "i", "z", "y"],
+    catalog: Literal["dp02", "dp03", "dp1"] = "dp02",
     max_attempts: int=5
 ) -> tuple:
     """
@@ -75,6 +87,7 @@ def fetch(
         ra: in degrees
         dec: in degrees
         band:
+        catalog:
         max_attempts: controls how many time we can skip a calexp if the source falls on the padding region.
 
     Returns:
@@ -83,6 +96,8 @@ def fetch(
     Raises:
         ValueError: if no image of the coordinate exists.
         RuntimeError: if `max_attempts` is exceeded.
+        NotImplementedError: when catalog is one of `dp03` or `dp1`.
+        ValueError: when `catalog` is not one of `dp02`, `dp03`, `dp1`.
     """
     def dataId(visit: pd.DataFrame) -> dict:
         """
@@ -97,7 +112,7 @@ def fetch(
         }
 
     butler = Butler('dp02', collections='2.2i/runs/DP0.2')
-    visits_df = seek(service, ra, dec, dataproduct_subtype="lsst.calexp", band=band)
+    visits_df = seek(service, ra, dec, catalog=catalog, dataproduct_subtype="lsst.calexp", band=band)
     attempts = 0
     while attempts < max_attempts and len(visits_df) > 0:
         visit = visits_df.sample(1)
@@ -116,7 +131,7 @@ def fetch(
     raise RuntimeError(f"No images containing the transient found in {max_attempts} attempts.")
 
 
-def inject(calexp, ra: float, dec: float, mag: float):
+def inject(calexp, ra: float, dec: float, mag: float,):
     """
     Inject a source onto a calexp image.
 
@@ -149,7 +164,7 @@ def inject(calexp, ra: float, dec: float, mag: float):
     return injected_output.output_exposure, injected_output.output_catalog
 
 
-def warp(science, template):
+def warp(science, template,):
     """
     Warp input template image to WCS and Bounding Box of the science image.
     From: https://github.com/LSSTDESC/dia_improvement/blob/master/notebooks/dia_kernel_exploration.ipynb
@@ -163,7 +178,7 @@ def warp(science, template):
     return warped_template
 
 
-def subtract(science, template, sources):
+def subtract(science, template, sources,):
     """
     Subtract template from science image.
 
@@ -183,9 +198,26 @@ def subtract(science, template, sources):
     return difference.difference
 
 
-def sfis_pipeline(service, ra, dec, mag, band):
+def sfis_pipeline(service, ra, dec, mag, band, catalog: Literal["dp02", "dp03", "dp1"] = "dp02",):
+    """
+    Seek, fetch, inject with a source and subtract calibrated exposures.
+
+    Args:
+        service:
+        ra: in degrees
+        dec: in degrees
+        mag:
+        band:
+        catalog:
+
+    Returns:
+
+    Raises:
+        NotImplementedError: when catalog is one of `dp03` or `dp1`.
+        ValueError: when `catalog` is not one of `dp02`, `dp03`, `dp1`.
+    """
     print("Retrieving visit table, choosing one visit at random.")
-    calexp, template, sources = fetch(service, ra, dec, band)
+    calexp, template, sources = fetch(service, ra, dec, band, catalog=catalog)
     print("Starting source injection.")
     calexp_injected, calexp_catalog = inject(calexp, ra, dec, mag)
     print("Starting DIA.")
