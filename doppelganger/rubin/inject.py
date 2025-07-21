@@ -1,18 +1,18 @@
 from typing import Literal
 from warnings import warn
 
-import pandas as pd
-
-from lsst.geom import SpherePoint, Point2I
-import lsst.geom as geom
+from lsst.afw.math import Warper
+from lsst.afw.math import WarperConfig
 from lsst.daf.butler import Butler
-from lsst.afw.math import Warper, WarperConfig
+from lsst.geom import Point2I
+from lsst.geom import SpherePoint
+import lsst.geom as geom
+from lsst.ip.diffim.subtractImages import AlardLuptonSubtractConfig
+from lsst.ip.diffim.subtractImages import AlardLuptonSubtractTask
 from lsst.source.injection import generate_injection_catalog
-from lsst.source.injection import VisitInjectConfig, VisitInjectTask
-from lsst.ip.diffim.subtractImages import (
-    AlardLuptonSubtractTask,
-    AlardLuptonSubtractConfig,
-)
+from lsst.source.injection import VisitInjectConfig
+from lsst.source.injection import VisitInjectTask
+import pandas as pd
 
 
 def calexp_contains(calexp, ra: float, dec: float) -> bool:

@@ -1,10 +1,11 @@
+from datetime import datetime
 import unittest
 import zipfile as zf
-from datetime import datetime
 
-from doppelganger.notices import parse_notice
 from doppelganger.notices import fermigbm as gbm
+from doppelganger.notices import parse_notice
 from doppelganger.types import CelestialCoords
+
 from . import TEST_DIR
 
 

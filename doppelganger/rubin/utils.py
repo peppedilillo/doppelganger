@@ -1,10 +1,9 @@
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+import astropy.visualization as vis
+from astropy.wcs import WCS
 import matplotlib.pyplot as plt
 import numpy as np
-
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from astropy.wcs import WCS
-import astropy.visualization as vis
 
 
 def remove_figure(fig):
