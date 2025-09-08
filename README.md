@@ -1,12 +1,12 @@
 # doppelganger
 
-We are trying to build a new software tool for searching optical counterparts to high-energy transients in the LSST dataset, in real-time.
-This is repo contains a disordered collection of code, scripts and notebooks produced in our reasearch.
+We are building new software tools for searching optical counterparts to high-energy transients in the LSST dataset, in real-time.
+This repo contains a collection of code, scripts and notebooks produced in our research.
 The project codename will likely change in the future. Work in progress.
 
 ## Installing
 
-This is only needed if you intend to use the code in `doppelganger/`, or any of our scripts. You don't need to install the package to execute our notebooks: just copy them to to the RSP and run them.
+This is only needed if you intend to use the code in `doppelganger/`, or any of our scripts. You don't need to install the package to execute our notebooks: just copy them to the RSP and run them.
 
 Clone this repository and `cd` into it. Create a new environment, activate it, and install with `pip install .`.
 To install with optional developer dependencies, in an editable environment, use `pip install -e ".[dev]"`.
