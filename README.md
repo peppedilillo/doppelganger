@@ -1,6 +1,6 @@
 # doppelganger
 
-We are building new software tools for searching optical counterparts to high-energy transients in the LSST dataset, in real-time.
+We are building new software tools for searching optical counterparts to high-energy transients in LSST data.
 This repo contains a collection of code, scripts and notebooks produced in our research.
 The project codename will likely change in the future. Work in progress.
 
