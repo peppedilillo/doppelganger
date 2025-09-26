@@ -1,9 +1,12 @@
+from typing import Sequence
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import astropy.visualization as vis
 from astropy.wcs import WCS
 import matplotlib.pyplot as plt
 import numpy as np
+from lsst.afw.image import ExposureF
 
 
 def remove_figure(fig):
@@ -71,49 +74,48 @@ def get_color_limits(img_data: np.array, scale: float | None = None) -> dict:
         )
 
 
-def plot_host(
-    img,
-    ra,
-    dec,
-    scale: float | None = None,
-    title: str | None = None,
-    figsize: tuple[int, int] = (10, 10),
+def plot_side_by_side(
+        image1: ExposureF,
+        image2: ExposureF,
+        coords1: Sequence[tuple[float, float]] = (),
+        coords2: Sequence[tuple[float, float]] = (),
+        figsize: tuple[int, int] = (16, 9),
 ):
-    img_wcs = WCS(img.getWcs().getFitsMetadata())
-    img_data = img.getImage().array
-    coord_galhost = SkyCoord(
-        ra=ra * u.degree,
-        dec=dec * u.degree,
-    )
-    bbox_extent = (
-        img.getBBox().beginX,
-        img.getBBox().endX,
-        img.getBBox().beginY,
-        img.getBBox().endY,
-    )
+    """
+    Plot two astronomical images side by side, optionally with markers for specific coordinates.
 
-    fig, ax = plt.subplots(1, figsize=figsize)
-    plt.subplot(projection=img_wcs)
-    plt.plot(
-        *img_wcs.world_to_pixel(coord_galhost),
-        "r*",
-        markerfacecolor="None",
-        ms=20,
-        label="Host galaxy",
-    )
-    plt.imshow(
-        img_data, cmap="gray", extent=bbox_extent, **get_color_limits(img_data, scale)
-    )
-    if title is not None:
-        plt.title(title)
-    plt.axis("on")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    plt.xlabel("X")
-    plt.ylabel("Y")
-    plt.grid(color="grey", ls="solid")
-    plt.legend(loc="lower left")
-    return fig, ax
+    Args:
+        image1: Astronomical image object with getWcs() and getImage() methods.
+        image2: Astronomical image object with getWcs() and getImage() methods.
+        coords1: Sequence of (ra, dec) tuples in degrees for sky coordinates to mark on first image. Optional.
+        coords2: Sequence of (ra, dec) tuples in degrees for sky coordinates to mark on second image. Optional.
+        figsize: Tuple of (width, height) in inches for figure size. Defaults to (16, 9).
+
+    Returns:
+        Tuple of (matplotlib Figure, list of matplotlib Axes objects).
+    """
+    fig = plt.figure(figsize=figsize)
+    axs = []
+    for i, (image, coords) in enumerate(zip((image1, image2), (coords1, coords2))):
+        wcs = WCS(image.getWcs().getFitsMetadata())
+        image_data = image.getImage().array
+        ax = fig.add_subplot(1, 2, i + 1, projection=wcs)
+        ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, 2))
+        for ra, dec in coords:
+            coord = SkyCoord(
+                ra=ra * u.degree,
+                dec=dec * u.degree,
+                frame='icrs'
+            )
+            ax.plot(*wcs.world_to_pixel(coord), 'y*', markerfacecolor="None", ms=20)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        axs.append(ax)
+    plt.tight_layout()
+    plt.show()
+    return fig, axs
 
 
 def plot_zoom(
