@@ -77,7 +77,7 @@ def get_color_limits(img_data: np.array, scale: float | None = None) -> dict:
 def plot_with_coords(
         image: ExposureF,
         coords: Sequence[tuple[float, float]] = (),
-        figsize: tuple[int, int] = (16, 9),
+        figsize: tuple[int, int] = (10, 10),
         scale: float | None = None,
 ):
     """
@@ -95,9 +95,9 @@ def plot_with_coords(
     wcs = WCS(image.getWcs().getFitsMetadata())
     image_data = image.getImage().array
 
-    fig, ax = plt.subplots(1, figsize=figsize)
-    plt.subplot(projection=wcs)
-    ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, scale=scale))
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1, projection=wcs)
+    ax.imshow(image_data, cmap="gray", **get_color_limits(image_data, scale=scale))
     for ra, dec in coords:
         coord = SkyCoord(
             ra=ra * u.degree,
@@ -139,7 +139,7 @@ def plot_side_by_side(
         wcs = WCS(image.getWcs().getFitsMetadata())
         image_data = image.getImage().array
         ax = fig.add_subplot(1, 2, i + 1, projection=wcs)
-        ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, scale))
+        ax.imshow(image_data, cmap="gray", **get_color_limits(image_data, scale))
         for ra, dec in coords:
             coord = SkyCoord(
                 ra=ra * u.degree,
