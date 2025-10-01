@@ -74,12 +74,50 @@ def get_color_limits(img_data: np.array, scale: float | None = None) -> dict:
         )
 
 
+def plot_with_coords(
+        image: ExposureF,
+        coords: Sequence[tuple[float, float]] = (),
+        figsize: tuple[int, int] = (16, 9),
+        scale: float | None = None,
+):
+    """
+    Plot an astronomical image, optionally with markers for specific coordinates.
+
+    Args:
+        image: Astronomical image object with getWcs() and getImage() methods.
+        coords: Sequence of (ra, dec) tuples in degrees for sky coordinates to mark on first image. Optional.
+        figsize: Tuple of (width, height) in inches for figure size. Defaults to (16, 9).
+        scale: Float value between 0 and 100 controlling contrast via percentile clipping. If None, uses ZScale. Defaults to None.
+
+    Returns:
+        Tuple of (matplotlib Figure, list of matplotlib Axes objects).
+    """
+    wcs = WCS(image.getWcs().getFitsMetadata())
+    image_data = image.getImage().array
+
+    fig, ax = plt.subplots(1, figsize=figsize)
+    plt.subplot(projection=wcs)
+    ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, scale=scale))
+    for ra, dec in coords:
+        coord = SkyCoord(
+            ra=ra * u.degree,
+            dec=dec * u.degree,
+            frame='icrs'
+        )
+        ax.plot(*wcs.world_to_pixel(coord), 'y*', markerfacecolor="None", ms=20)
+    ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
+    plt.tight_layout()
+    plt.show()
+    return fig, ax
+
+
 def plot_side_by_side(
         image1: ExposureF,
         image2: ExposureF,
         coords1: Sequence[tuple[float, float]] = (),
         coords2: Sequence[tuple[float, float]] = (),
         figsize: tuple[int, int] = (16, 9),
+        scale: float | None = None,
 ):
     """
     Plot two astronomical images side by side, optionally with markers for specific coordinates.
@@ -90,6 +128,7 @@ def plot_side_by_side(
         coords1: Sequence of (ra, dec) tuples in degrees for sky coordinates to mark on first image. Optional.
         coords2: Sequence of (ra, dec) tuples in degrees for sky coordinates to mark on second image. Optional.
         figsize: Tuple of (width, height) in inches for figure size. Defaults to (16, 9).
+        scale: Float value between 0 and 100 controlling contrast via percentile clipping. If None, uses ZScale. Defaults to None.
 
     Returns:
         Tuple of (matplotlib Figure, list of matplotlib Axes objects).
@@ -100,7 +139,7 @@ def plot_side_by_side(
         wcs = WCS(image.getWcs().getFitsMetadata())
         image_data = image.getImage().array
         ax = fig.add_subplot(1, 2, i + 1, projection=wcs)
-        ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, 2))
+        ax.imshow(image_data, cmap="gray", **get_color_limits(image.getImage().array, scale))
         for ra, dec in coords:
             coord = SkyCoord(
                 ra=ra * u.degree,
@@ -108,10 +147,7 @@ def plot_side_by_side(
                 frame='icrs'
             )
             ax.plot(*wcs.world_to_pixel(coord), 'y*', markerfacecolor="None", ms=20)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_xlabel('')
-        ax.set_ylabel('')
+        ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
         axs.append(ax)
     plt.tight_layout()
     plt.show()
@@ -123,11 +159,27 @@ def plot_zoom(
     ra,
     dec,
     side_px=250,
+    figsize: tuple[int, int] = (10, 10),
     scale: float | None = None,
     marker: str = "+",  # matplotlib markers
     title: str | None = None,
-    figsize: tuple[int, int] = (10, 10),
 ):
+    """
+    Plot a zoomed-in view of an astronomical image centered on specific coordinates.
+
+    Args:
+        img: Astronomical image object with getWcs(), getImage(), and getBBox() methods.
+        ra: Right ascension in degrees.
+        dec: Declination in degrees.
+        side_px: Side length of the zoomed region in pixels. Defaults to 250.
+        figsize: Tuple of (width, height) in inches for figure size. Defaults to (10, 10).
+        scale: Float value between 0 and 100 controlling contrast via percentile clipping. If None, uses ZScale. Defaults to None.
+        marker: Matplotlib marker style for the central coordinate. Defaults to "+".
+        title: Optional title for the plot. Defaults to None.
+
+    Returns:
+        Tuple of (matplotlib Figure, matplotlib Axes object).
+    """
     wcs = WCS(img.getWcs().getFitsMetadata())
     coord_center = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
     img_data = img.getImage().array

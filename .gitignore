@@ -166,4 +166,5 @@ cython_debug/
 
 **/.DS_Store
 repomix-output.txt
+CLAUDE.md
 .secrets
