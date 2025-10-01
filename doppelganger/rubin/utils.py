@@ -104,7 +104,7 @@ def plot_with_coords(
             dec=dec * u.degree,
             frame='icrs'
         )
-        ax.plot(*wcs.world_to_pixel(coord), 'y*', markerfacecolor="None", ms=20)
+        ax.plot(*wcs.world_to_pixel(coord), 'ko', markerfacecolor="None", ms=20)
     ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
     plt.tight_layout()
     plt.show()
@@ -146,7 +146,7 @@ def plot_side_by_side(
                 dec=dec * u.degree,
                 frame='icrs'
             )
-            ax.plot(*wcs.world_to_pixel(coord), 'y*', markerfacecolor="None", ms=20)
+            ax.plot(*wcs.world_to_pixel(coord), 'ko', markerfacecolor="None", ms=20)
         ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
         axs.append(ax)
     plt.tight_layout()
