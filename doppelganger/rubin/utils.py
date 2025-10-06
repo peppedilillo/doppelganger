@@ -4,11 +4,12 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 import astropy.visualization as vis
 from astropy.wcs import WCS
-import matplotlib.pyplot as plt
-import numpy as np
 from lsst import geom as geom
 from lsst.afw.image import ExposureF
-from lsst.geom import SpherePoint, Point2I
+from lsst.geom import Point2I
+from lsst.geom import SpherePoint
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def remove_figure(fig):
@@ -107,7 +108,7 @@ def get_mask(image: ExposureF, mask_names: str | list[str]) -> np.ndarray:
     out = np.zeros_like(mask_array)
     for mask_name in mask_names:
         target_bit = mask.getMaskPlane(mask_name)
-        out |= (mask_array & (2 ** target_bit)) != 0
+        out |= (mask_array & (2**target_bit)) != 0
     return out
 
 
@@ -130,16 +131,14 @@ def get_color_limits(img_data: np.array, scale: float | None = None) -> dict:
             "vmax": np.percentile(img_data, 100 - scale),
         }
     else:
-        raise ValueError(
-            "Paramter `scale` is a percentile and should be comprised between 0 and 100."
-        )
+        raise ValueError("Paramter `scale` is a percentile and should be comprised between 0 and 100.")
 
 
 def plot_with_coords(
-        image: ExposureF,
-        coords: Sequence[tuple[float, float]] = (),
-        figsize: tuple[int, int] = (10, 10),
-        scale: float | None = None,
+    image: ExposureF,
+    coords: Sequence[tuple[float, float]] = (),
+    figsize: tuple[int, int] = (10, 10),
+    scale: float | None = None,
 ):
     """Plot an astronomical image, optionally with markers for specific coordinates.
 
@@ -159,12 +158,8 @@ def plot_with_coords(
     ax = fig.add_subplot(1, 1, 1, projection=wcs)
     ax.imshow(image_data, cmap="gray", **get_color_limits(image_data, scale=scale))
     for ra, dec in coords:
-        coord = SkyCoord(
-            ra=ra * u.degree,
-            dec=dec * u.degree,
-            frame='icrs'
-        )
-        ax.plot(*wcs.world_to_pixel(coord), 'ko', markerfacecolor="None", ms=20)
+        coord = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
+        ax.plot(*wcs.world_to_pixel(coord), "ko", markerfacecolor="None", ms=20)
     ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
     plt.tight_layout()
     plt.show()
@@ -172,12 +167,12 @@ def plot_with_coords(
 
 
 def plot_side_by_side(
-        image1: ExposureF,
-        image2: ExposureF,
-        coords1: Sequence[tuple[float, float]] = (),
-        coords2: Sequence[tuple[float, float]] = (),
-        figsize: tuple[int, int] = (16, 9),
-        scale: float | None = None,
+    image1: ExposureF,
+    image2: ExposureF,
+    coords1: Sequence[tuple[float, float]] = (),
+    coords2: Sequence[tuple[float, float]] = (),
+    figsize: tuple[int, int] = (16, 9),
+    scale: float | None = None,
 ):
     """Plot two astronomical images side by side, optionally with markers for specific coordinates.
 
@@ -200,12 +195,8 @@ def plot_side_by_side(
         ax = fig.add_subplot(1, 2, i + 1, projection=wcs)
         ax.imshow(image_data, cmap="gray", **get_color_limits(image_data, scale))
         for ra, dec in coords:
-            coord = SkyCoord(
-                ra=ra * u.degree,
-                dec=dec * u.degree,
-                frame='icrs'
-            )
-            ax.plot(*wcs.world_to_pixel(coord), 'ko', markerfacecolor="None", ms=20)
+            coord = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
+            ax.plot(*wcs.world_to_pixel(coord), "ko", markerfacecolor="None", ms=20)
         ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
         axs.append(ax)
     plt.tight_layout()
@@ -258,9 +249,7 @@ def plot_zoom(
         origin="lower",
         **get_color_limits(img_data, scale),
     )
-    ax.plot(
-        *(center_x_pixel, center_y_pixel), f"k{marker}", markerfacecolor="None", ms=40
-    )
+    ax.plot(*(center_x_pixel, center_y_pixel), f"k{marker}", markerfacecolor="None", ms=40)
     if title is not None:
         ax.set_title(title)
     ax.set_xlim(center_x_pixel - half_side_px, center_x_pixel + half_side_px)

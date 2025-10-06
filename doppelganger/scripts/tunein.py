@@ -33,9 +33,7 @@ def info_from_notice(content: str):
     )
 
 
-def formatted(
-    issuet: datetime, obst: datetime, loc: CelestialCoords, err: float
-) -> str:
+def formatted(issuet: datetime, obst: datetime, loc: CelestialCoords, err: float) -> str:
     return f"""
     \tIssued: {issuet.strftime("%m/%d/%Y, %H:%M:%S")}
     \tTime:   {obst.strftime("%m/%d/%Y, %H:%M:%S")}
@@ -76,9 +74,7 @@ def main(
     offset: Literal["earliest", "latest"],
 ):
     if not instruments:
-        console.print(
-            "At least one instrument broadcash is required. Usage: tunein --help"
-        )
+        console.print("At least one instrument broadcash is required. Usage: tunein --help")
         return
     if not userid:
         userid = Prompt.ask("Enter NASA-GCN userid")
@@ -108,9 +104,7 @@ def main(
             content = message.value().decode()
 
             console.print("------------")
-            console.print(
-                f"Received VOEvent from topic={topic}, at offset={offset_str}."
-            )
+            console.print(f"Received VOEvent from topic={topic}, at offset={offset_str}.")
             console.print(formatted(*info_from_notice(content)), end="\n\n")
 
 

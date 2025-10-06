@@ -12,9 +12,7 @@ from . import TEST_DIR
 class TestNoticesGBM(unittest.TestCase):
     def setUp(self):
         with zf.ZipFile(TEST_DIR / "data_notices_gbm.zip", "r") as fzip:
-            self.notices = [
-                (fname, fzip.read(fname).decode()) for fname in fzip.namelist()
-            ]
+            self.notices = [(fname, fzip.read(fname).decode()) for fname in fzip.namelist()]
 
     def test_parse_gbm_notice(self):
         for fname, content in self.notices:

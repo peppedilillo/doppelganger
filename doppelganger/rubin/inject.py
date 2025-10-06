@@ -1,8 +1,8 @@
 from typing import Literal
 
+from lsst.afw.image import ExposureF
 from lsst.afw.math import Warper
 from lsst.afw.math import WarperConfig
-from lsst.afw.image import ExposureF
 from lsst.ip.diffim.subtractImages import AlardLuptonSubtractConfig
 from lsst.ip.diffim.subtractImages import AlardLuptonSubtractTask
 from lsst.source.injection import generate_injection_catalog
@@ -65,9 +65,7 @@ def warp(
     """
     warper_config = WarperConfig()
     warper = Warper.fromConfig(warper_config)
-    warped_template = warper.warpExposure(
-        science.getWcs(), template, destBBox=science.getBBox()
-    )
+    warped_template = warper.warpExposure(science.getWcs(), template, destBBox=science.getBBox())
     # Add PSF.  I think doing this directly without warping is wrong.
     # At least the x,y mapping should be updated
     warped_template.setPsf(template.getPsf())
