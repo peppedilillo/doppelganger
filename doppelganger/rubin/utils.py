@@ -6,13 +6,19 @@ import astropy.visualization as vis
 from astropy.wcs import WCS
 import matplotlib.pyplot as plt
 import numpy as np
+from lsst import geom as geom
 from lsst.afw.image import ExposureF
+from lsst.geom import SpherePoint, Point2I
 
 
 def remove_figure(fig):
-    """
-    Remove a figure to reduce memory footprint.
-    From Rubin DP0.2 Tutorial notebooks by the Community Science Team.
+    """Remove a figure and free associated memory.
+
+    Args:
+        fig: Matplotlib Figure object or (Figure, Axes) tuple to remove
+
+    Note:
+        From Rubin DP0.2 Tutorial notebooks by the Community Science Team.
     """
     import gc
 
@@ -32,6 +38,15 @@ def remove_figure(fig):
 
 
 def table_summary(service, table_name: str):
+    """Generate a summary of a TAP table schema including column descriptions.
+
+    Args:
+        service: PyVO TAP service object
+        table_name: Name of the table in dp02_dc2_catalogs schema
+
+    Returns:
+        Formatted string with table description and column details
+    """
     s = ""
     description = (
         service.search(
@@ -59,7 +74,53 @@ def table_summary(service, table_name: str):
     return s
 
 
+def str_ivoa2adql(ivoa_str: str, frame: str = "ICRS") -> str:
+    """Convert IVOA STC-S region string to ADQL geometric function.
+
+    Args:
+        ivoa_str: IVOA STC-S region string (e.g., "CIRCLE 150.0 2.0 0.5")
+        frame: Coordinate reference frame. Defaults to "ICRS"
+
+    Returns:
+        ADQL geometric function string (e.g., "CIRCLE('ICRS', 150.0, 2.0, 0.5)")
+    """
+    figure, *coords = ivoa_str.strip().split()
+    coord_string = ", ".join(f"{c:.7f}" for c in map(float, coords))
+    return f"{figure}('{frame}', {coord_string})"
+
+
+def get_mask(image: ExposureF, mask_names: str | list[str]) -> np.ndarray:
+    """Extract a boolean mask array from an LSST image for specified mask planes.
+
+    Args:
+        image: LSST image object with mask information
+        mask_names: Single mask plane name or list of mask plane names
+
+    Returns:
+        Boolean array. True indicates pixels flagged in any of the specified mask planes
+    """
+    mask = image.getMask()
+    if isinstance(mask_names, str):
+        mask_names = [mask_names]
+
+    mask_array = mask.getArray()
+    out = np.zeros_like(mask_array)
+    for mask_name in mask_names:
+        target_bit = mask.getMaskPlane(mask_name)
+        out |= (mask_array & (2 ** target_bit)) != 0
+    return out
+
+
 def get_color_limits(img_data: np.array, scale: float | None = None) -> dict:
+    """Calculate color scale limits for image display.
+
+    Args:
+        img_data: Image array data
+        scale: Percentile value for contrast clipping (0-100). If None, uses ZScale algorithm
+
+    Returns:
+        Dictionary with 'vmin' and 'vmax' keys for matplotlib color scaling
+    """
     zscale = vis.ZScaleInterval()
     if scale is None:
         return {"vmin": (_l := zscale.get_limits(img_data))[0], "vmax": _l[1]}
@@ -80,8 +141,7 @@ def plot_with_coords(
         figsize: tuple[int, int] = (10, 10),
         scale: float | None = None,
 ):
-    """
-    Plot an astronomical image, optionally with markers for specific coordinates.
+    """Plot an astronomical image, optionally with markers for specific coordinates.
 
     Args:
         image: Astronomical image object with getWcs() and getImage() methods.
@@ -119,8 +179,7 @@ def plot_side_by_side(
         figsize: tuple[int, int] = (16, 9),
         scale: float | None = None,
 ):
-    """
-    Plot two astronomical images side by side, optionally with markers for specific coordinates.
+    """Plot two astronomical images side by side, optionally with markers for specific coordinates.
 
     Args:
         image1: Astronomical image object with getWcs() and getImage() methods.
@@ -164,8 +223,7 @@ def plot_zoom(
     marker: str = "+",  # matplotlib markers
     title: str | None = None,
 ):
-    """
-    Plot a zoomed-in view of an astronomical image centered on specific coordinates.
+    """Plot a zoomed-in view of an astronomical image centered on specific coordinates.
 
     Args:
         img: Astronomical image object with getWcs(), getImage(), and getBBox() methods.
@@ -208,3 +266,20 @@ def plot_zoom(
     ax.set_xlim(center_x_pixel - half_side_px, center_x_pixel + half_side_px)
     ax.set_ylim(center_y_pixel - half_side_px, center_y_pixel + half_side_px)
     return fig, ax
+
+
+def image_contains(image: ExposureF, ra: float, dec: float) -> bool:
+    """Check whether sky coordinates fall within image boundaries.
+
+    Args:
+        image: LSST image object with WCS and bounding box
+        ra: Right ascension in degrees
+        dec: Declination in degrees
+
+    Returns:
+        True if coordinates fall within image bounds, False otherwise
+    """
+    lsst_wcs = image.getWcs()
+    sky_point = SpherePoint(ra * geom.degrees, dec * geom.degrees)
+    pixel_point = Point2I(lsst_wcs.skyToPixel(sky_point))
+    return image.getBBox().contains(pixel_point)
