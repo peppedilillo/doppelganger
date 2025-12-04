@@ -159,7 +159,7 @@ def plot_with_coords(
     ax.imshow(image_data, cmap="gray", **get_color_limits(image_data, scale=scale))
     for ra, dec in coords:
         coord = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
-        ax.plot(*wcs.world_to_pixel(coord), "ko", markerfacecolor="None", ms=20)
+        ax.plot(*wcs.world_to_pixel(coord), "ro", markerfacecolor="None", ms=20)
     ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
     plt.tight_layout()
     plt.show()
